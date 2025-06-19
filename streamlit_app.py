@@ -8,12 +8,11 @@ import yfinance as yf
 st.set_page_config(page_title="Zerodha Portfolio Dashboard", layout="wide")
 st.title("📈 Zerodha Portfolio Analyzer (AI-Enhanced)")
 
-# --- File Upload ---
 uploaded_file = st.file_uploader("Upload your Zerodha holdings CSV", type="csv")
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
     
-    # --- Clean Data ---
+    # --- Clean Columns ---
     df.columns = df.columns.str.strip().str.replace(".", "", regex=False)
     df.rename(columns={
         "Instrument": "Stock",
@@ -29,7 +28,29 @@ if uploaded_file:
     
     df["Return%"] = (df["PL"] / df["InvestedAmount"]) * 100
 
-    # --- Summary Metrics ---
+    # --- Sector Classification ---
+    sector_map = {
+        "BANKINDIA": "Banking",
+        "UNIONBANK": "Banking",
+        "INDIANB": "Banking",
+        "PNB": "Banking",
+        "FEDERALBNK": "Banking",
+        "INDUSINDBK": "Banking",
+        "GOLDBEES": "Commodities",
+        "INFY": "IT Services",
+        "DRREDDY": "Pharmaceuticals",
+        "NATCOPHARM": "Pharmaceuticals",
+        "MANAPPURAM": "Finance",
+        "TATAMOTORS": "Automobile",
+        "NTPCGREEN": "Energy",
+        "BAJAJHFL": "Finance",
+        "ARE&M": "Industrials",
+        "ITCHOTELS": "Hospitality"
+    }
+
+    df["Sector"] = df["Stock"].map(sector_map).fillna("Other")
+
+    # --- Portfolio Summary ---
     st.subheader("📊 Portfolio Summary")
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total Invested (₹)", f"{df['InvestedAmount'].sum():,.2f}")
@@ -37,7 +58,7 @@ if uploaded_file:
     col3.metric("Unrealized P&L (₹)", f"{df['PL'].sum():,.2f}")
     col4.metric("Overall Return (%)", f"{(df['PL'].sum()/df['InvestedAmount'].sum()*100):.2f}%")
 
-    # --- Bar Chart: Invested vs Value ---
+    # --- Investment vs Value Chart ---
     st.subheader("💼 Investment vs Current Value")
     fig, ax = plt.subplots(figsize=(10, 4))
     bar_width = 0.4
@@ -50,7 +71,7 @@ if uploaded_file:
     ax.legend()
     st.pyplot(fig)
 
-    # --- Return Percentage ---
+    # --- Return Chart ---
     st.subheader("📈 Stock-wise Return %")
     fig2, ax2 = plt.subplots(figsize=(10, 4))
     sns.barplot(x="Stock", y="Return%", data=df.sort_values("Return%", ascending=False), palette="coolwarm", ax=ax2)
@@ -58,16 +79,40 @@ if uploaded_file:
     plt.xticks(rotation=45, ha="right")
     st.pyplot(fig2)
 
-    # --- Risk Metrics Section ---
+    # --- Sector Pie ---
+    st.subheader("🏷️ Sector Allocation")
+    sector_group = df.groupby("Sector")["CurrentValue"].sum().sort_values(ascending=False)
+    fig4, ax4 = plt.subplots()
+    ax4.pie(sector_group, labels=sector_group.index, autopct="%1.1f%%", startangle=140)
+    ax4.axis("equal")
+    st.pyplot(fig4)
+
+    # --- AI-Driven Portfolio Tips ---
+    st.subheader("💡 AI Analyst Insights")
+    top_gainers = df[df["Return%"] > 100]["Stock"].tolist()
+    top_laggards = df[df["Return%"] < -20]["Stock"].tolist()
+    exposure = df["Sector"].value_counts(normalize=True) * 100
+
+    with st.container():
+        if top_gainers:
+            st.write(f"📈 **Consider Partial Profit Booking** in: `{', '.join(top_gainers)}`")
+        if top_laggards:
+            st.write(f"⚠️ **Reevaluate Laggards** like: `{', '.join(top_laggards)}`")
+        if "Banking" in exposure and exposure["Banking"] > 40:
+            st.write("🧯 **Heavy Banking Allocation** (>40%)—consider diversifying into other sectors.")
+        if "IT Services" not in exposure.values:
+            st.write("🔍 Consider adding defensive or growth exposure in IT, FMCG, or Large Cap Index ETFs.")
+        if "Commodities" in exposure and exposure["Commodities"] < 10:
+            st.write("🪙 Gold hedge is present but small—fine for inflation protection.")
+
+    # --- Risk Metrics ---
     st.subheader("📉 Risk Metrics: Beta & Sharpe Ratio")
     try:
         benchmark_data = yf.download("^NSEI", period="1y")
         if "Adj Close" in benchmark_data.columns:
             benchmark = benchmark_data["Adj Close"].pct_change().dropna()
-
-            betas = {}
-            sharpes = {}
-            risk_free = 0.065 / 252  # Daily risk-free rate
+            betas, sharpes = {}, {}
+            risk_free = 0.065 / 252
 
             for stock in df["Stock"]:
                 try:
@@ -93,7 +138,7 @@ if uploaded_file:
     except Exception as e:
         st.error(f"⚠️ Risk metrics couldn't be calculated: {e}")
 
-    # --- Correlation Matrix ---
+    # --- Correlation Heatmap ---
     st.subheader("📌 Correlation Heatmap (1Y Returns)")
     price_data = {}
     for stock in df["Stock"]:
@@ -110,9 +155,9 @@ if uploaded_file:
         sns.heatmap(corr, annot=True, cmap="coolwarm", ax=ax3)
         st.pyplot(fig3)
     else:
-        st.warning("⚠️ Could not fetch any stock data for correlation matrix.")
+        st.warning("⚠️ Could not fetch stock data for correlation matrix.")
 
-    st.success("✅ All analysis complete! Re-upload anytime to refresh.")
+    st.success("✅ Analysis complete! Upload updated data anytime to refresh.")
 
 else:
     st.info("👆 Upload your Zerodha holdings CSV to begin analysis.")
