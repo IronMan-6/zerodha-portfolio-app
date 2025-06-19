@@ -1,2 +1,3 @@
 # zerodha-portfolio-app
-Exercise
+Exercise for Portfolio assess and dashboard
+
