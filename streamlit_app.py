@@ -97,7 +97,7 @@ with tab1:
         if any(df["Return%"] > 100):
             st.success("📈 Consider booking profits in: " + ", ".join(df[df["Return%"] > 100]["Stock"]))
         if any(df["Return%"] < -20):
-            st.warning("🔻 Laggards to review: " + ", ".join(df[df["Return%"] < -20]["Stock"])))
+            st.warning("🔻 Laggards to review: " + ", ".join(df[df["Return%"] < -20]["Stock"]))
         # --- Risk Metrics ---
         st.subheader("📉 Risk Metrics")
         try:
