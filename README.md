@@ -1,22 +1,39 @@
-# Zerodha Portfolio Analyzer 📊
+# Zerodha Portfolio Analyzer 📈
 
-A Streamlit app to visually analyze your equity holdings downloaded from Zerodha Kite.
+This is a powerful AI-assisted Streamlit dashboard to analyze your Zerodha equity portfolio with zero coding skills.
 
-## 🔧 Features
-- Upload and analyze your holdings.csv
-- Visualize stock-wise returns and allocation
-- Calculate risk metrics (Beta & Sharpe ratio)
-- Sector diversification and correlation heatmap
-- Privacy-first: all analysis runs client-side via your browser
+## 🚀 Features
 
-## 🧠 How to Use
-1. Download your holdings report from Zerodha Console
-2. Launch the app here: [Your App URL]
-3. Upload `holdings.csv` as-is (no editing needed)
-4. View dynamic charts, metrics, and analysis
+- Upload Zerodha `holdings.csv` directly
+- Visualize:
+  - Invested vs. Current value
+  - Stock-wise returns
+  - Sector allocation pie chart
+  - Correlation heatmap
+- Calculate risk metrics like Beta & Sharpe Ratio
+- Get actionable insights (e.g., laggard flags, overexposure alerts)
 
-## 🛠️ Tech Stack
-- Python, Streamlit, Pandas, Matplotlib, Seaborn, yFinance
+## 🧠 Tech Stack
+
+- Python
+- Streamlit
+- Pandas, Matplotlib, Seaborn
+- Yahoo Finance (via yfinance)
+
+## 🛠️ How to Use
+
+1. Export your holdings file from Zerodha Console
+2. Upload it in the app UI
+3. View analysis, insights & charts instantly
+
+## 📍 Live App
+
+[🔗 Launch the App](https://your-streamlit-app-link)
+
+## 🙌 Author
+
+Crafted by Silambarasan with Microsoft Copilot
+
 
 ## 🚀 Live Demo
 ➡️ [Streamlit App Link](https://your-app-url)
