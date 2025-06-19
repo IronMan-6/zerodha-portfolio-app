@@ -58,39 +58,43 @@ if uploaded_file:
     plt.xticks(rotation=45, ha="right")
     st.pyplot(fig2)
 
-    # --- Optional Risk Analysis ---
+    # --- Risk Metrics Section ---
     st.subheader("📉 Risk Metrics: Beta & Sharpe Ratio")
+    try:
+        benchmark_data = yf.download("^NSEI", period="1y")
+        if "Adj Close" in benchmark_data.columns:
+            benchmark = benchmark_data["Adj Close"].pct_change().dropna()
 
-    benchmark = yf.download("^NSEI", period="1y")["Adj Close"].pct_change().dropna()
-    betas = {}
-    sharpes = {}
-    risk_free = 0.065 / 252  # Approx daily risk-free rate
+            betas = {}
+            sharpes = {}
+            risk_free = 0.065 / 252  # Daily risk-free rate
 
-    for stock in df["Stock"]:
-        try:
-            stock_data = yf.download(stock + ".NS", period="1y")["Adj Close"].pct_change().dropna()
-            aligned = pd.concat([stock_data, benchmark], axis=1).dropna()
-            aligned.columns = ["stock", "benchmark"]
-            beta = np.cov(aligned["stock"], aligned["benchmark"])[0, 1] / np.var(aligned["benchmark"])
-            excess_return = aligned["stock"].mean() - risk_free
-            sharpe = excess_return / aligned["stock"].std()
-            betas[stock] = round(beta, 2)
-            sharpes[stock] = round(sharpe, 2)
-        except:
-            betas[stock] = "N/A"
-            sharpes[stock] = "N/A"
+            for stock in df["Stock"]:
+                try:
+                    s_data = yf.download(stock + ".NS", period="1y")["Adj Close"].pct_change().dropna()
+                    combined = pd.concat([s_data, benchmark], axis=1).dropna()
+                    combined.columns = ["stock", "benchmark"]
+                    beta = np.cov(combined["stock"], combined["benchmark"])[0, 1] / np.var(combined["benchmark"])
+                    sharpe = (combined["stock"].mean() - risk_free) / combined["stock"].std()
+                    betas[stock] = round(beta, 2)
+                    sharpes[stock] = round(sharpe, 2)
+                except:
+                    betas[stock] = "N/A"
+                    sharpes[stock] = "N/A"
 
-    risk_df = pd.DataFrame({
-        "Stock": list(betas.keys()),
-        "Beta": list(betas.values()),
-        "Sharpe Ratio": list(sharpes.values())
-    })
-
-    st.dataframe(risk_df)
+            risk_df = pd.DataFrame({
+                "Stock": betas.keys(),
+                "Beta": betas.values(),
+                "Sharpe Ratio": sharpes.values()
+            })
+            st.dataframe(risk_df)
+        else:
+            st.warning("⚠️ Benchmark data unavailable—risk metrics skipped.")
+    except Exception as e:
+        st.error(f"⚠️ Risk metrics couldn't be calculated: {e}")
 
     # --- Correlation Matrix ---
     st.subheader("📌 Correlation Heatmap (1Y Returns)")
-
     price_data = {}
     for stock in df["Stock"]:
         try:
@@ -99,14 +103,16 @@ if uploaded_file:
         except:
             continue
 
-    price_df = pd.DataFrame(price_data).pct_change().dropna()
-    corr = price_df.corr()
+    if price_data:
+        price_df = pd.DataFrame(price_data).pct_change().dropna()
+        corr = price_df.corr()
+        fig3, ax3 = plt.subplots(figsize=(10, 6))
+        sns.heatmap(corr, annot=True, cmap="coolwarm", ax=ax3)
+        st.pyplot(fig3)
+    else:
+        st.warning("⚠️ Could not fetch any stock data for correlation matrix.")
 
-    fig3, ax3 = plt.subplots(figsize=(10, 6))
-    sns.heatmap(corr, annot=True, cmap="coolwarm", ax=ax3)
-    st.pyplot(fig3)
-
-    st.success("✅ All analysis complete! Upload new data anytime to refresh.")
+    st.success("✅ All analysis complete! Re-upload anytime to refresh.")
 
 else:
     st.info("👆 Upload your Zerodha holdings CSV to begin analysis.")
